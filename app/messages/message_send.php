@@ -154,6 +154,7 @@
 		//santize the from
 			$message_from = preg_replace('{[\D]}', '', $message_from);
 
+/*
 		//prepare message to send
 			$message['to'] = $message_to;
 			$message['text'] = $message_text;
@@ -186,7 +187,18 @@
 			}
 			$response = http_request($http_destination, $http_method, $headers, $http_content);
 			//echo $http_content."<br><br>".$response;
-
+*/
+		// send
+			$url = htmlspecialchars_decode('https://smsout-api.vitelity.net/api.php?login=virt_api&pass=0aff575825&cmd=sendsms&src={GENERIC_SENDER}&dst={GENERIC_TO}&msg={GENERIC_MESSAGE}');
+			$url = str_replace('{GENERIC_SENDER}', urlencode($message_from), $url);
+			$url = str_replace('{GENERIC_TO}', urlencode($message_to), $url);
+			$url = str_replace('{GENERIC_MESSAGE}', urlencode($message_text), $url);
+		
+		//	_log("send url:[" . $url . "]", 3, "generic_hook_sendsms");
+		
+		// send it
+			$response = file_get_contents($url);
+			
 		//redirect the user
 			//$_SESSION["message"] = $text['message-sent'];
 			return true;
