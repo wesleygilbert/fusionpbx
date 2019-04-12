@@ -37,7 +37,7 @@
 	$sql .= "and user_setting_subcategory = 'key' ";
 	$sql .= "and user_setting_value = :key ";
 	$sql .= "and user_setting_enabled = 'true' ";
-	$prep_statement = $db->prepare($sql);
+/*	$prep_statement = $db->prepare($sql);
 	$prep_statement->bindParam(':key', $_GET['key']);
 	if ($prep_statement) {
 		$prep_statement->execute();
@@ -67,12 +67,15 @@
 		echo "</html>\n";
 		exit();
 	}
-
+*/
 //get the raw input data
-	$json = file_get_contents('php://input');
+//	$json = file_get_contents('php://input');
 
 //decode the json into array
-	$message = json_decode($json, true);
+//	$message = json_decode($json, true);
+
+	$string = implode(',', $_POST);  
+	echo $string
 
 //get the source phone number
 	$phone_number = preg_replace('{[\D]}', '', $message['from']);
