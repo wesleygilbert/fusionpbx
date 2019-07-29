@@ -51,37 +51,84 @@ if ($domains_processed == 1) {
 		$sql .= "	where 1 = 1\n";
 		$sql .= "	order by u.username asc\n";
 		$sql .= ");\n";
-		$db->exec($sql);
+		$database = new database;
+		$database->execute($sql, null);
 		unset($sql);
 
 	//find rows that have a null group_uuid and set the correct group_uuid
 		$sql = "select * from v_user_groups ";
 		$sql .= "where group_uuid is null; ";
-		$prep_statement = $db->prepare(check_sql($sql));
-		if ($prep_statement) {
-			$prep_statement->execute();
-			$result = $prep_statement->fetchAll(PDO::FETCH_NAMED);
-			$db->beginTransaction();
+		$database = new database;
+		$result = $database->select($sql, null, 'all');
+		if (is_array($result)) {
 			foreach($result as $row) {
 				if (strlen($row['group_name']) > 0) {
 					//get the group_uuid
 						$sql = "select group_uuid from v_groups ";
-						$sql .= "where group_name = '".$row['group_name']."' ";
-						$prep_statement_sub = $db->prepare($sql);
-						$prep_statement_sub->execute();
-						$sub_result = $prep_statement_sub->fetch(PDO::FETCH_ASSOC);
-						unset ($prep_statement_sub);
-						$group_uuid = $sub_result['group_uuid'];
+						$sql .= "where group_name = :group_name ";
+						$parameters['group_name'] = $row['group_name'];
+						$database = new database;
+						$group_uuid = $database->execute($sql, $parameters, 'column');
+						unset($sql, $parameters);
 					//set the user_group_uuid
 						$sql = "update v_user_groups set ";
-						$sql .= "group_uuid = '".$group_uuid."' ";
-						$sql .= "where user_group_uuid = '".$row['user_group_uuid']."'; ";
-						$db->exec($sql);
-						unset($sql);
+						$sql .= "group_uuid = :group_uuid ";
+						$sql .= "where user_group_uuid = :user_group_uuid; ";
+						$parameters['group_uuid'] = $group_uuid;
+						$parameters['user_group_uuid'] = $row['user_group_uuid'];
+						$database = new database;
+						$database->execute($sql, $parameters);
+						unset($sql, $parameters);
 				}
 			}
-			$db->commit();
-			unset ($prep_statement);
+		}
+		unset($result);
+
+	//find rows that have a null group_uuid and set the correct group_uuid
+		$sql = "select count(*) from v_default_settings ";
+		$sql .= "where default_setting_category = 'user'; ";
+		$database = new database;
+		$num_rows = $database->select($sql, null, 'column');
+		if ($num_rows > 0) {
+			//build the array
+			$x=0;
+			$array['default_settings'][$x]['default_setting_uuid'] = "38cf53d2-5fae-43ed-be93-33b0a5cc1c38";
+			$array['default_settings'][$x]['default_setting_category'] = "users";
+			$array['default_settings'][$x]['default_setting_subcategory'] = "unique";
+			$x++;
+			$array['default_settings'][$x]['default_setting_uuid'] = "e3f5f4cd-0f17-428a-b788-2f2db91b6dc7";
+			$array['default_settings'][$x]['default_setting_category'] = "users";
+			$array['default_settings'][$x]['default_setting_subcategory'] = "password_length";
+			$x++;
+			$array['default_settings'][$x]['default_setting_uuid'] = "51c106d9-9aba-436b-b9b1-ff4937cef706";
+			$array['default_settings'][$x]['default_setting_category'] = "users";
+			$array['default_settings'][$x]['default_setting_subcategory'] = "password_number";
+			$x++;
+			$array['default_settings'][$x]['default_setting_uuid'] = "f0e601b9-b619-4247-9624-c33605e96fd8";
+			$array['default_settings'][$x]['default_setting_category'] = "users";
+			$array['default_settings'][$x]['default_setting_subcategory'] = "password_lowercase";
+			$x++;
+			$array['default_settings'][$x]['default_setting_uuid'] = "973b6773-dac0-4041-844e-71c48fc9542c";
+			$array['default_settings'][$x]['default_setting_category'] = "users";
+			$array['default_settings'][$x]['default_setting_subcategory'] = "password_uppercase";
+			$x++;
+			$array['default_settings'][$x]['default_setting_uuid'] = "a6b6d9cc-fb25-4bc3-ad85-fa530d9b334d";
+			$array['default_settings'][$x]['default_setting_category'] = "users";
+			$array['default_settings'][$x]['default_setting_subcategory'] = "password_special";
+
+			//add the temporary permission
+			$p = new permissions;
+			$p->add("default_setting_edit", 'temp');
+
+			//save to the data
+			$database = new database;
+			$database->app_name = 'default_setting';
+			$database->app_uuid = '2c2453c0-1bea-4475-9f44-4d969650de09';
+			$database->save($array);
+			unset($array);
+
+			//remove the temporary permission
+			$p->delete("default_setting_edit", 'temp');
 		}
 
 	//insert default password reset email template

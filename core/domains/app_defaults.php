@@ -24,32 +24,16 @@
 	Mark J Crane <markjcrane@fusionpbx.com>
 */
 
+//process this only one time
+	if ($domains_processed == 1) {
 
-if ($domains_processed == 1) {
-
-	//update the notifications table
-	if (is_array($_SESSION['switch']['scripts'])) {
-		$sql = "select count(*) as num_rows from v_notifications ";
-		$database = new database;
-		$num_rows = $database->select($sql, null, 'column');
-		if ($row['num_rows'] == 0) {
-			$sql = "insert into v_notifications ";
-			$sql .= "(";
-			$sql .= "notification_uuid, ";
-			$sql .= "project_notifications ";
-			$sql .= ")";
-			$sql .= "values ";
-			$sql .= "(";
-			$sql .= "'".uuid()."', ";
-			$sql .= "'false' ";
-			$sql .= ")";
+		//set domains with enabled status of empty or null to true
+			$sql = "update v_domains set domain_enabled = 'true' ";
+			$sql .= "where domain_enabled = '' or domain_enabled is null ";
 			$database = new database;
 			$database->execute($sql, null);
 			unset($sql);
-		}
-		unset($prep_statement, $row);
+
 	}
-
-}
-
+ 
 ?>

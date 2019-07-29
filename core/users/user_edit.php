@@ -35,12 +35,11 @@
 	$text = $language->get();
 
 //get user uuid
-	if ((is_uuid($_REQUEST["id"]) && permission_exists('user_edit')) ||
-		(is_uuid($_REQUEST["id"]) && $_REQUEST["id"] == $_SESSION['user_uuid']))  {
+	if (is_uuid($_REQUEST["id"]) && (permission_exists('user_edit') || $_REQUEST["id"] == $_SESSION['user_uuid'])) {
 		$user_uuid = $_REQUEST["id"];
 		$action = 'edit';
 	}
-	elseif (permission_exists('user_add') && !isset($_REQUEST["id"])) {
+	else if (permission_exists('user_add') && !is_uuid($_REQUEST["id"])) {
 		$user_uuid = uuid();
 		$action = 'add';
 	}
@@ -52,13 +51,15 @@
 
 //get total user count from the database, check limit, if defined
 	if (permission_exists('user_add') && $action == 'add' && $_SESSION['limit']['users']['numeric'] != '') {
-		$sql = "select count(user_uuid) as num_rows from v_users where domain_uuid = :domain_uuid ";
+		$sql = "select count(*) ";
+		$sql .= "from v_users ";
+		$sql .= "where domain_uuid = :domain_uuid ";
 		$parameters['domain_uuid'] = $_SESSION['domain_uuid'];
 		$database = new database;
-		$total_users = $database->execute($sql, $parameters, 'column');
-		unset($parameters);
+		$num_rows = $database->select($sql, $parameters, 'column');
+		unset($sql, $parameters);
 
-		if ($total_users >= $_SESSION['limit']['users']['numeric']) {
+		if ($num_rows >= $_SESSION['limit']['users']['numeric']) {
 			message::add($text['message-maximum_users'].' '.$_SESSION['limit']['users']['numeric'], 'negative');
 			header('Location: users.php');
 			exit;
@@ -77,34 +78,36 @@
 	}
 
 //delete the group from the user
-	if ($_GET["a"] == "delete" && permission_exists("user_delete")) {
+	if ($_GET["a"] == "delete" && is_uuid($_GET["group_uuid"]) && is_uuid($user_uuid) && permission_exists("user_delete")) {
 		//set the variables
 			$group_uuid = $_GET["group_uuid"];
 		//delete the group from the users
-			if (is_uuid($group_uuid) && is_uuid($user_uuid)) {
-				$sql = "delete from v_user_groups ";
-				$sql .= "where group_uuid = :group_uuid ";
-				$sql .= "and user_uuid = :user_uuid ";
-				$parameters['group_uuid'] = $group_uuid;
-				$parameters['user_uuid'] = $user_uuid;
-				$database = new database;
-				$database->execute($sql, $parameters);
-				unset($parameters);
-			}
+			$array['user_groups'][0]['group_uuid'] = $group_uuid;
+			$array['user_groups'][0]['user_uuid'] = $user_uuid;
+
+			$p = new permissions;
+			$p->add('user_group_delete', 'temp');
+
+			$database = new database;
+			$database->app_name = 'users';
+			$database->app_uuid = '112124b3-95c2-5352-7e9d-d14c0b88f207';
+			$database->delete($array);
+			unset($array);
+
+			$p->delete('user_group_delete', 'temp');
+
 		//redirect the user
 			message::add($text['message-update']);
-			if (is_uuid($user_uuid)) {
-				header("Location: user_edit.php?id=".$user_uuid);
-			}
-			return;
+			header("Location: user_edit.php?id=".$user_uuid);
+			exit;
 	}
 
 //retrieve password requirements
-	$required['length'] = $_SESSION['user']['password_length']['numeric'];
-	$required['number'] = ($_SESSION['user']['password_number']['boolean'] == 'true') ? true : false;
-	$required['lowercase'] = ($_SESSION['user']['password_lowercase']['boolean'] == 'true') ? true : false;
-	$required['uppercase'] = ($_SESSION['user']['password_uppercase']['boolean'] == 'true') ? true : false;
-	$required['special'] = ($_SESSION['user']['password_special']['boolean'] == 'true') ? true : false;
+	$required['length'] = $_SESSION['users']['password_length']['numeric'];
+	$required['number'] = ($_SESSION['users']['password_number']['boolean'] == 'true') ? true : false;
+	$required['lowercase'] = ($_SESSION['users']['password_lowercase']['boolean'] == 'true') ? true : false;
+	$required['uppercase'] = ($_SESSION['users']['password_uppercase']['boolean'] == 'true') ? true : false;
+	$required['special'] = ($_SESSION['users']['password_special']['boolean'] == 'true') ? true : false;
 
 //prepare the data
 	if (count($_POST) > 0) {
@@ -143,7 +146,7 @@
 			}
 			if (permission_exists('user_edit') && $action == 'edit') {
 				if ($username != $username_old && $username != '') {
-					$sql = "select count(*) as num_rows from v_users where username = :username ";
+					$sql = "select count(*) from v_users where username = :username ";
 					if ($_SESSION["user"]["unique"]["text"] != "global") {
 						$sql .= "and domain_uuid = :domain_uuid ";
 						$parameters['domain_uuid'] = $domain_uuid;
@@ -218,7 +221,7 @@
 			$parameters['user_uuid'] = $user_uuid;
 			$database = new database;
 			$row = $database->select($sql, $parameters, 'row');
-			if ($row['user_setting_uuid'] == '' && $user_language != '') {
+			if (!is_uuid($row['user_setting_uuid']) && $user_language != '') {
 				//add user setting to array for insert
 					$array['user_settings'][$i]['user_setting_uuid'] = uuid();
 					$array['user_settings'][$i]['user_uuid'] = $user_uuid;
@@ -232,14 +235,20 @@
 			}
 			else {
 				if ($row['user_setting_value'] == '' || $user_language == '') {
-					$sql = "delete from v_user_settings ";
-					$sql .= "where user_setting_category = 'domain' ";
-					$sql .= "and user_setting_subcategory = 'language' ";
-					$sql .= "and user_uuid = :user_uuid ";
-					$parameters['user_uuid'] = $user_uuid;
+					$array_delete['user_settings'][0]['user_setting_category'] = 'domain';
+					$array_delete['user_settings'][0]['user_setting_subcategory'] = 'language';
+					$array_delete['user_settings'][0]['user_uuid'] = $user_uuid;
+
+					$p = new permissions;
+					$p->add('user_setting_delete', 'temp');
+
 					$database = new database;
-					$database->execute($sql, $parameters);
-					unset($sql);
+					$database->app_name = 'users';
+					$database->app_uuid = '112124b3-95c2-5352-7e9d-d14c0b88f207';
+					$database->delete($array_delete);
+					unset($array_delete);
+
+					$p->delete('user_setting_delete', 'temp');
 				}
 				else {
 					//add user setting to array for update
@@ -278,13 +287,20 @@
 			}
 			else {
 				if ($row['user_setting_value'] == '' || $user_time_zone == '') {
-					$sql = "delete from v_user_settings ";
-					$sql .= "where user_setting_category = 'domain' ";
-					$sql .= "and user_setting_subcategory = 'time_zone' ";
-					$sql .= "and user_uuid = :user_uuid ";
-					$parameters['user_uuid'] = $user_uuid;
+					$array_delete['user_settings'][0]['user_setting_category'] = 'domain';
+					$array_delete['user_settings'][0]['user_setting_subcategory'] = 'time_zone';
+					$array_delete['user_settings'][0]['user_uuid'] = $user_uuid;
+
+					$p = new permissions;
+					$p->add('user_setting_delete', 'temp');
+
 					$database = new database;
-					$database->execute($sql, $parameters);
+					$database->app_name = 'users';
+					$database->app_uuid = '112124b3-95c2-5352-7e9d-d14c0b88f207';
+					$database->delete($array_delete);
+					unset($array_delete);
+
+					$p->delete('user_setting_delete', 'temp');
 				}
 				else {
 					//add user setting to array for update
@@ -324,14 +340,20 @@
 				}
 				else {
 					if ($row['user_setting_value'] == '' || $message_key == '') {
-						$sql = "delete from v_user_settings ";
-						$sql .= "where user_setting_category = 'message' ";
-						$sql .= "and user_setting_subcategory = 'key' ";
-						$sql .= "and user_uuid = :user_uuid ";
-						$parameters['user_uuid'] = $user_uuid;
+						$array_delete['user_settings'][0]['user_setting_category'] = 'message';
+						$array_delete['user_settings'][0]['user_setting_subcategory'] = 'key';
+						$array_delete['user_settings'][0]['user_uuid'] = $user_uuid;
+
+						$p = new permissions;
+						$p->add('user_setting_delete', 'temp');
+
 						$database = new database;
-						$database->execute($sql, $parameters);
-						unset($sql);
+						$database->app_name = 'users';
+						$database->app_uuid = '112124b3-95c2-5352-7e9d-d14c0b88f207';
+						$database->delete($array_delete);
+						unset($array_delete);
+
+						$p->delete('user_setting_delete', 'temp');
 					}
 					else {
 						//add user setting to array for update
@@ -353,18 +375,24 @@
 				$group_data = explode('|', $group_uuid_name);
 				$group_uuid = $group_data[0];
 				$group_name = $group_data[1];
-				//only a superadmin can add other superadmins or admins, admins can only add other admins
-				switch ($group_name) {
-					case "superadmin": if (!if_group("superadmin")) { break; }
-					case "admin": if (!if_group("superadmin") && !if_group("admin")) { break; }
-					default: //add group user to array for insert
-						$array['user_groups'][$n]['user_group_uuid'] = uuid();
-						$array['user_groups'][$n]['domain_uuid'] = $domain_uuid;
-						$array['user_groups'][$n]['group_name'] = $group_name;
-						$array['user_groups'][$n]['group_uuid'] = $group_uuid;
-						$array['user_groups'][$n]['user_uuid'] = $user_uuid;
-						$n++;
+
+				//compare the group level to only add groups at the same level or lower than the user
+				$sql = "select * from v_groups ";
+				$sql .= "where (domain_uuid = :domain_uuid or domain_uuid is null) ";
+				$sql .= "and group_uuid = :group_uuid ";
+				$parameters['domain_uuid'] = $_SESSION['domain_uuid'];
+				$parameters['group_uuid'] = $group_uuid;
+				$database = new database;
+				$row = $database->select($sql, $parameters, 'row');
+				if ($row['group_level'] <= $_SESSION['user']['group_level']) {
+					$array['user_groups'][$n]['user_group_uuid'] = uuid();
+					$array['user_groups'][$n]['domain_uuid'] = $domain_uuid;
+					$array['user_groups'][$n]['group_name'] = $group_name;
+					$array['user_groups'][$n]['group_uuid'] = $group_uuid;
+					$array['user_groups'][$n]['user_uuid'] = $user_uuid;
+					$n++;
 				}
+				unset($parameters);
 			}
 
 		//update domain, if changed
@@ -463,7 +491,8 @@
 			$p->add("user_setting_add", "temp");
 			$p->add("user_setting_edit", "temp");
 			$p->add("user_edit", "temp");
-
+			$p->add('user_group_add', 'temp');
+	
 		//save the data
 			$database = new database;
 			$database->app_name = 'users';
@@ -475,6 +504,7 @@
 			$p->delete("user_setting_add", "temp");
 			$p->delete("user_setting_edit", "temp");
 			$p->delete("user_edit", "temp");
+			$p->delete('user_group_add', 'temp');
 
 		//if call center installed
 			if ($action == 'edit' && permission_exists('user_edit') && file_exists($_SERVER["PROJECT_ROOT"]."/app/call_centers/app_config.php")) {
@@ -583,7 +613,7 @@
 					}
 				}
 			}
-			unset($sql, $parameters);
+			unset($sql, $parameters, $result, $row);
 		}
 	}
 
@@ -707,16 +737,19 @@
 	echo "		<option value=''></option>\n";
 	//get all language codes from database
 	$sql = "select * from v_languages order by language asc ";
-	$parameters = null;
 	$database = new database;
-	$languages = $database->select($sql, $parameters, 'all');
-	foreach ($languages as $row) {
-		$language_codes[$row["code"]] = $row["language"];
+	$languages = $database->select($sql, null, 'all');
+	if (is_array($languages) && sizeof($languages) != 0) {
+		foreach ($languages as $row) {
+			$language_codes[$row["code"]] = $row["language"];
+		}
 	}
-	unset($languages);
-	foreach ($_SESSION['app']['languages'] as $code) {
-		$selected = ($code == $user_settings['domain']['language']['code']) ? "selected='selected'" : null;
-		echo "	<option value='".escape($code)."' ".escape($selected).">".escape($language_codes[$code])." [".escape($code)."]</option>\n";
+	unset($sql, $languages, $row);
+	if (is_array($_SESSION['app']['languages']) && sizeof($_SESSION['app']['languages']) != 0) {
+		foreach ($_SESSION['app']['languages'] as $code) {
+			$selected = ($code == $user_settings['domain']['language']['code']) ? "selected='selected'" : null;
+			echo "	<option value='".escape($code)."' ".escape($selected).">".escape($language_codes[$code])." [".escape($code)."]</option>\n";
+		}
 	}
 	echo "		</select>\n";
 	echo "		<br />\n";
@@ -881,7 +914,6 @@
 		$parameters['user_uuid'] = $user_uuid;
 		$database = new database;
 		$user_groups = $database->select($sql, $parameters, 'all');
-		unset($parameters);
 		if (is_array($user_groups)) {
 			echo "<table cellpadding='0' cellspacing='0' border='0'>\n";
 			foreach($user_groups as $field) {
@@ -903,7 +935,7 @@
 			}
 			echo "</table>\n";
 		}
-		unset($sql, $user_groups);
+		unset($sql, $parameters, $user_groups, $field);
 
 		$sql = "select * from v_groups ";
 		$sql .= "where (domain_uuid = :domain_uuid or domain_uuid is null) ";
@@ -914,17 +946,16 @@
 		$parameters['domain_uuid'] = $_SESSION['domain_uuid'];
 		$database = new database;
 		$groups = $database->select($sql, $parameters, 'all');
-		unset($parameters);
 		if (is_array($groups)) {
 			if (isset($assigned_groups)) { echo "<br />\n"; }
 			echo "<select name='group_uuid_name' class='formfld' style='width: auto; margin-right: 3px;' ".($action == 'add' ? "required='required'" : null).">\n";
 			echo "	<option value=''></option>\n";
 			foreach($groups as $field) {
-				if ($field['group_name'] == "superadmin" && !if_group("superadmin")) { continue; }	//only show the superadmin group to other superadmins
-				if ($field['group_name'] == "admin" && (!if_group("superadmin") && !if_group("admin") )) { continue; }	//only show the admin group to other admins
-				if ( !isset($assigned_groups) || (isset($assigned_groups) && !in_array($field["group_uuid"], $assigned_groups)) ) {
-					if ($group_uuid_name == $field['group_uuid']."|".$field['group_name']) { $selected = "selected='selected'"; } else { $selected = ''; }
-					echo "	<option value='".$field['group_uuid']."|".$field['group_name']."' $selected>".$field['group_name'].(($field['domain_uuid'] != '') ? "@".$_SESSION['domains'][$field['domain_uuid']]['domain_name'] : null)."</option>\n";
+				if ($field['group_level'] <= $_SESSION['user']['group_level']) {
+					if (!isset($assigned_groups) || (isset($assigned_groups) && !in_array($field["group_uuid"], $assigned_groups))) {
+						if ($group_uuid_name == $field['group_uuid']."|".$field['group_name']) { $selected = "selected='selected'"; } else { $selected = ''; }
+						echo "	<option value='".$field['group_uuid']."|".$field['group_name']."' $selected>".$field['group_name'].(($field['domain_uuid'] != '') ? "@".$_SESSION['domains'][$field['domain_uuid']]['domain_name'] : null)."</option>\n";
+					}
 				}
 			}
 			echo "</select>";
@@ -932,7 +963,7 @@
 				echo "<input type='submit' class='btn' value=\"".$text['button-add']."\" >\n";
 			}
 		}
-		unset($sql, $groups);
+		unset($sql, $parameters, $groups, $field);
 
 		echo "		</td>";
 		echo "	</tr>";

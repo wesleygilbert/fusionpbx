@@ -27,7 +27,7 @@
 
 	if (!function_exists('software_version')) {
 		function software_version() {
-			return '4.5.7';
+			return '4.5.8';
 		}
 	}
 
@@ -2125,7 +2125,7 @@ function number_pad($number,$n) {
 //validate and format order by clause of select statement
 	if (!function_exists('order_by')) {
 		function order_by($col, $dir) {
-			$col = preg_replace('#[^a-zA-Z0-9-_]#', '', $col);
+			$col = preg_replace('#[^a-zA-Z0-9-_.]#', '', $col);
 			$dir = strtolower($dir) == 'desc' ? 'desc' : 'asc';
 			if ($col != '') { return ' order by '.$col.' '.$dir.' '; }
 		}
