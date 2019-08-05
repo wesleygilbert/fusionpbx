@@ -247,11 +247,10 @@
 			$domain_uuid = $_SESSION['domain_uuid'];
 
 		//get the users
-			$sql = "select * from v_users where domain_uuid = :domain_uuid ";
-			$parameters['domain_uuid'] = $domain_uuid;
-			$database = new database;
-			$users = $database->select($sql, $parameters, 'all');
-			unset($sql, $parameters);
+			$sql = "select * from v_users where domain_uuid = '".$domain_uuid."' ";
+			$prep_statement = $db->prepare($sql);
+			$prep_statement->execute();
+			$users = $prep_statement->fetchAll(PDO::FETCH_ASSOC);
 
 		//get the contents of the csv file and convert them into an array
 			$handle = @fopen($_SESSION['file'], "r");

@@ -32,25 +32,19 @@
 		$sql .= "and dialplan_detail_tag = 'action'\n";
 		$sql .= "and (dialplan_detail_type = 'transfer' or dialplan_detail_type = 'bridge')\n";
 		$sql .= "order by dialplan_detail_order;\n";
-		$database = new database;
-		$extensions = $database->select($sql, null, 'all');
-		unset($sql);
-
-		if (is_array($extensions) && @sizeof($extensions) != 0) {
+		$prep_statement = $db->prepare(check_sql($sql));
+		if ($prep_statement) {
+			$prep_statement->execute();
+			$extensions = $prep_statement->fetchall(PDO::FETCH_ASSOC);
 			foreach($extensions as $row) {
-				$sql = "update v_destinations ";
-				$sql .= "set destination_app = :destination_app ";
-				$sql .= "destination_data = :destination_data ";
-				$sql .= "where dialplan_uuid = :dialplan_uuid ";
-				$parameters['destination_app'] = $row['destination_app'];
-				$parameters['destination_data'] = $row['destination_data'];
-				$parameters['dialplan_uuid'] = $row['dialplan_uuid'];
-				$database = new database;
-				$database->execute($sql, $parameters);
-				unset($sql, $parameters);
+				$sql = "UPDATE v_destinations ";
+				$sql .= "SET destination_app = '".$row['destination_app']."', ";
+				$sql .= "destination_data = '".$row['destination_data']."' ";
+				$sql .= "WHERE dialplan_uuid = '". $row['dialplan_uuid'] ."' ";
+				$db->exec(check_sql($sql));
+				unset($sql);
 			}
 		}
-		unset($extensions, $row);
 	}
 
 ?>

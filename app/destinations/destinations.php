@@ -65,15 +65,36 @@
 	}
 
 //get variables used to control the order
-	$order_by = $_GET["order_by"];
-	$order = $_GET["order"];
+	$order_by = check_str($_GET["order_by"]);
+	$order = check_str($_GET["order"]);
+
+//validate order by
+	if (strlen($order_by) > 0) {
+		$order_by = preg_replace('#[^a-zA-Z0-9_\-]#', '', $order_by);
+	}
+
+//validate the order
+	switch ($order) {
+		case 'asc':
+			break;
+		case 'desc':
+			break;
+		default:
+			$order = '';
+	}
 
 //set the type
-	switch ($_GET['type']) {
-		case 'inbound': $destination_type = 'inbound'; break;
-		case 'outbound': $destination_type = 'outbound'; break;
-		case 'local': $destination_type = 'local'; break;
-		default: $destination_type = 'inbound';
+	if ($_GET['type'] == 'inbound') {
+		$destination_type = 'inbound';
+	}
+	elseif ($_GET['type'] == 'outbound') {
+		$destination_type = 'outbound';
+	}
+	elseif ($_GET['type'] == 'local') {
+		$destination_type = 'local';
+	}
+	else {
+		$destination_type = 'inbound';
 	}
 
 //add the search term
@@ -94,26 +115,23 @@
 		$sql_search .= ") ";
 	}
 
-//common sql where
-	$sql_where = "where destination_type = :destination_type ";
+//prepare to page the results
+	$sql = "select count(destination_uuid) as num_rows from v_destinations ";
+	$sql .= "where destination_type = :destination_type ";
 	if ($_GET['show'] == "all" && permission_exists('destination_all')) {
 		//show all
-	}
-	else {
-		$sql_where .= "and (domain_uuid = :domain_uuid or domain_uuid is null) ";
+	} else {
+		$sql .= "and (domain_uuid = :domain_uuid or domain_uuid is null) ";
 		$parameters['domain_uuid'] = $domain_uuid;
 	}
 	if (isset($sql_search)) {
-		$sql_where .= "and ".$sql_search;
+		$sql .= "and ".$sql_search;
 		$parameters['search'] = '%'.$search.'%';
 	}
 	$parameters['destination_type'] = $destination_type;
-
-//prepare to page the results
-	$sql = "select count(destination_uuid) from v_destinations ";
-	$sql .= $sql_where;
 	$database = new database;
 	$num_rows = $database->select($sql, $parameters, 'column');
+	unset($parameters);
 
 //prepare to page the results
 	require_once "resources/paging.php";
@@ -128,9 +146,24 @@
 	$offset = $rows_per_page * $page;
 
 //get the list
-	$sql = str_replace('count(destination_uuid)', '*', $sql);
-	$sql .= order_by($order_by, $order);
-	$sql .= limit_offset($rows_per_page, $offset);
+	$sql = "select * from v_destinations ";
+	$sql .= "where destination_type = :destination_type ";
+	if ($_GET['show'] == "all" && permission_exists('destination_all')) {
+		//show all
+	} else {
+		$sql .= "and (domain_uuid = :domain_uuid or domain_uuid is null) ";
+		$parameters['domain_uuid'] = $domain_uuid;
+	}
+	if (isset($sql_search)) {
+		$sql .= "and ".$sql_search;
+		$parameters['search'] = '%'.$search.'%';
+	}
+	$sql .= "and destination_type = :destination_type ";
+	if (strlen($order_by)> 0) { $sql .= "order by $order_by $order "; }
+	$sql .= "limit :rows_per_page offset :offset ";
+	$parameters['destination_type'] = $destination_type;
+	$parameters['rows_per_page'] = $rows_per_page;
+	$parameters['offset'] = $offset;
 	$database = new database;
 	$destinations = $database->select($sql, $parameters, 'all');
 	unset($parameters);
@@ -249,7 +282,7 @@
 	}
 	echo "	</td>\n";
 	echo "<tr>\n";
-	if (is_array($destinations) && @sizeof($destinations) != 0) {
+	if (is_array($destinations)) {
 		$x = 0;
 		foreach($destinations as $row) {
 			$action_name = action_name($destination_array, $row['destination_app'].':'.$row['destination_data']);

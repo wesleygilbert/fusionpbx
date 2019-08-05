@@ -32,30 +32,23 @@ How to Install FusionPBX
 ----------------------------
 * As root do the following:
 
-Debian Install
+```bash
+apt-get update && apt-get upgrade && apt-get install -y git
 ```
-wget -O - https://raw.githubusercontent.com/fusionpbx/fusionpbx-install.sh/master/debian/pre-install.sh | sh;
-cd /usr/src/fusionpbx-install.sh/debian && ./install.sh
+```bash
+cd /usr/src
 ```
-
-Ubuntu Install
+```bash
+git clone https://github.com/fusionpbx/fusionpbx-install.sh.git
 ```
-wget -O - https://raw.githubusercontent.com/fusionpbx/fusionpbx-install.sh/master/ubuntu/pre-install.sh | sh;
-cd /usr/src/fusionpbx-install.sh/ubuntu && ./install.sh
+```bash
+chmod 755 -R /usr/src/fusionpbx-install.sh
 ```
-
-FreeBSD Install
+```bash
+cd /usr/src/fusionpbx-install.sh/debian
 ```
-pkg install --yes git
-cd /usr/src && git clone https://github.com/fusionpbx/fusionpbx-install.sh.git
-cd /usr/src/fusionpbx-install.sh/freebsd && ./install.sh
-```
-
-CentOS Install
-```
-yum install wget
-wget -O - https://raw.githubusercontent.com/fusionpbx/fusionpbx-install.sh/master/centos/pre-install.sh | sh
-cd /usr/src/fusionpbx-install.sh/centos && ./install.sh
+```bash
+./install.sh
 ```
 
 This install script is designed to be an fast, simple, and in a modular way to install FusionPBX. Start with a minimal install of Debian 9 with SSH enabled. Run the following commands under root. The script installs FusionPBX, FreeSWITCH release package and its dependencies, IPTables, Fail2ban, NGINX, PHP FPM and PostgreSQL.
