@@ -126,6 +126,9 @@
 		$apps[$x]['default_settings'][$y]['default_setting_enabled'] = "false";
 		$apps[$x]['default_settings'][$y]['default_setting_description'] = "";
 
+	//cache details
+		$apps[$x]['cache']['key'] = "dialplan.\${ivr_menu_context}";
+
 	//schema details
 		$y=0;
 		$apps[$x]['db'][$y]['table']['name'] = "v_ivr_menus";
