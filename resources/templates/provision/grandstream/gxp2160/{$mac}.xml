@@ -184,8 +184,11 @@
     <!-- # Local SIP Port. Default is 5060 -->
     <!-- # Number -->
     <!-- # Mandatory -->
-    <P40>5060</P40>
-
+{if isset($local_sip_port_1)}
+    <P40>{$local_sip_port_1}</P40>
+{else}
+     <P40>5060</P40>
+{/if}
     <!-- # SIP Registration Failure Retry Wait Time (in seconds). Default is 20 -->
     <!-- # Number: 1 - 3600 -->
     <!-- # Mandatory -->
@@ -787,14 +790,21 @@
 
     <!-- # Matching Incoming Caller ID. Matching Rule 1 -->
     <!-- # String -->
+{if isset($grandstream_ringtone_match_incoming_caller_id_1)}
+    <P1488>{$grandstream_ringtone_match_incoming_caller_id_1}</P1488>
+{else}
     <P1488>ring1</P1488>
-
+{/if}
     <!-- # Matching Rule 1 Distinctive Ringtone -->
     <!-- # -1 - No Ringtone, 0 - system ring tone, 1 - custom ring tone 1, 2 - custom ring tone 2, 3 - custom ring tone 3, 4 - silent, 5 - Default Ringtone. Default is 5. -->
     <!-- # Number: -1, 0, 1, 2, 3, 4, 5 -->
     <!-- # Mandatory -->
-    <P1489>5</P1489>
-
+{if isset($grandstream_ringtone_match_incoming_caller_id_ring_1)}
+    <P1489>{$grandstream_ringtone_match_incoming_caller_id_ring_1}</P1489>
+{else}
+     <P1489>5</P1489>
+{/if}
+    
     <!-- # Matching Incoming Caller ID. Matching Rule 2 -->
     <!-- # String -->
     <P1490>ring2</P1490>
@@ -1140,7 +1150,11 @@
     <!-- # Local SIP port. Default is 5060 -->
     <!-- # Number -->
     <!-- # Mandatory -->
-    <P413>5060</P413>
+{if isset($local_sip_port_2)}
+    <P413>{$local_sip_port_2}</P413>
+{else}
+     <P413>5060</P413>
+{/if}
 
     <!-- # SIP Registration Failure Retry Wait Time (in seconds). Default is 20 -->
     <!-- # Number: 1 - 3600 -->
@@ -5714,12 +5728,12 @@
     <!-- # Internet Protocol. 0 - Both, prefer IPv4, 1 - Both, prefer IPv6, 2 - IPv4 Only, 3 - IPv6 Only. Default is 0 -->
     <!-- # Number: 0, 1, 2, 3 -->
     <!-- # Mandatory -->
-    <P1415>0</P1415>
+    <P1415>2</P1415>
 
     <!-- # IP Address Mode. 0 - DHCP, 1 - Static IP, 2 - PPPoE. Default is 0 -->
     <!-- # Number: 0, 1, 2 -->
     <!-- # Mandatory -->
-    <!-- # P8 = 0 -->
+    <P8>0<P8>
 
     <!-- ########################################## -->
     <!-- # DHCP -->
@@ -7964,7 +7978,7 @@
     <!-- # When set to Yes(1), it will override the configured NTP server -->
     <!-- # Number: 0, 1 -->
     <!-- # Mandatory -->
-    <P144>1</P144>
+    <P144>0</P144>
 
     <!-- # Time Zone -->
 
@@ -8043,7 +8057,7 @@
     <!-- # When set to Yes(1), it will override the configured Time Zone setting if available  -->
     <!-- # Number: 0, 1 -->
     <!-- # Mandatory -->
-    <P143>1</P143>
+    <P143>0</P143>
 
     <!-- # Self Defined Time zone. Max length allowed is 64 characters -->
     <!-- # String -->
