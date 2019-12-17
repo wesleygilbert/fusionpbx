@@ -236,8 +236,8 @@
 <Monitor_User_ID_1_ ua="na"></Monitor_User_ID_1_>
 
 <!-- NAT Settings -->
-<NAT_Mapping_Enable_1_ ua="na">No</NAT_Mapping_Enable_1_>
-<NAT_Keep_Alive_Enable_1_ ua="na">No</NAT_Keep_Alive_Enable_1_>
+<NAT_Mapping_Enable_1_ ua="na">Yes</NAT_Mapping_Enable_1_>
+<NAT_Keep_Alive_Enable_1_ ua="na">Yes</NAT_Keep_Alive_Enable_1_>
 <NAT_Keep_Alive_Msg_1_ ua="na">$NOTIFY</NAT_Keep_Alive_Msg_1_>
 <NAT_Keep_Alive_Dest_1_ ua="na">$PROXY</NAT_Keep_Alive_Dest_1_>
 
