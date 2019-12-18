@@ -32,7 +32,7 @@
     -->
 
     <!-- FusionPBX: Run FAX server queue poller  -->
-    <!--<param name="startup-script" value="app/fax/resources/scripts/fax_queue_monitor.lua"/>-->
+    <param name="startup-script" value="app/fax/resources/scripts/fax_queue_monitor.lua"/>
 
     <!-- FusionPBX: Support BLF for call flow -->
     <!-- There 2 way to handle this
@@ -40,7 +40,7 @@
       2 - Event handler - handle each SUBSCRIBE request
     -->
     <!--<param name="startup-script" value="call_flow_monitor.lua"/>-->
-    <!--<param name="startup-script" value="blf_subscribe.lua flow"/>-->
+    <param name="startup-script" value="blf_subscribe.lua flow"/>
 
     <!-- FusionPBX: Support BLF for DND -->
     <!--<param name="startup-script" value="blf_subscribe.lua dnd"/>-->
