@@ -24,7 +24,7 @@
     <!-- #802.1Q/VLAN Tag (VLAN classification for RTP) -->
     <!-- # Number: 0 to 4094 -->
     <!-- # Mandatory -->
-    <P51>0</P51>
+    <P51>{$grandstream_lan_port_vlan}</P51>
 
     <!-- # Layer 2 QoS.  -->
     <!-- # SIP 802.1p priority value (0 - 7) -->
@@ -1013,13 +1013,13 @@
     <!-- # Mandatory -->
     <P72>1</P72>
 
-<!-- Dial Plan -->
-<!--  String -->
+    <!-- Dial Plan -->
+    <!--  String -->
 	
 {if isset($grandstream_dial_plan) }
-<P4200>{$grandstream_dial_plan}</P4200>
+    <P4200>{$grandstream_dial_plan}</P4200>
 {else}
-<P4200>{literal}{x+|*x+|*++|\p\a\r\k\+*x+| \f\l\o\w\+*x+}{/literal}</P4200>
+    <P4200>{literal}{x+|*x+|*++|\p\a\r\k\+*x+| \f\l\o\w\+*x+}{/literal}</P4200>
 {/if}
 
     <!-- # SUBSCRIBE for MWI. 0 - No, 1 - Yes -->
@@ -1896,7 +1896,12 @@
 
     <!-- # Dial Plan  -->
     <!-- # String -->
-    <P4201>{ x+ | \+x+ | *x+ | *xx*x+ }</P4201>
+
+{if isset($grandstream_dial_plan) }
+    <P4201>{$grandstream_dial_plan}</P4201>
+{else}
+    <P4201>{literal}{x+|*x+|*++|\p\a\r\k\+*x+| \f\l\o\w\+*x+}{/literal}</P4201>
+{/if}	  
 
     <!-- # SUBSCRIBE for MWI. 0 - No, 1 - Yes -->
     <!-- # Number: 0, 1 -->

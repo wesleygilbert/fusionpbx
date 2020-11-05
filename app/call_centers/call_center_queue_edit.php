@@ -97,6 +97,8 @@
 			$queue_discard_abandoned_after = $_POST["queue_discard_abandoned_after"];
 			$queue_abandoned_resume_allowed = $_POST["queue_abandoned_resume_allowed"];
 			$queue_cid_prefix = $_POST["queue_cid_prefix"];
+			$queue_outbound_caller_id_name = $_POST["queue_outbound_caller_id_name"];
+			$queue_outbound_caller_id_number = $_POST["queue_outbound_caller_id_number"];
 			$queue_announce_sound = $_POST["queue_announce_sound"];
 			$queue_announce_frequency = $_POST["queue_announce_frequency"];
 			$queue_cc_exit_keys = $_POST["queue_cc_exit_keys"];
@@ -280,6 +282,12 @@
 			$array['call_center_queues'][0]['queue_discard_abandoned_after'] = $queue_discard_abandoned_after;
 			$array['call_center_queues'][0]['queue_abandoned_resume_allowed'] = $queue_abandoned_resume_allowed;
 			$array['call_center_queues'][0]['queue_cid_prefix'] = $queue_cid_prefix;
+			if (permission_exists('call_center_outbound_caller_id_name')) {
+				$array['call_center_queues'][0]['queue_outbound_caller_id_name'] = $queue_outbound_caller_id_name;
+			}
+			if (permission_exists('call_center_outbound_caller_id_number')) {
+				$array['call_center_queues'][0]['queue_outbound_caller_id_number'] = $queue_outbound_caller_id_number;
+			}
 			$array['call_center_queues'][0]['queue_announce_sound'] = $queue_announce_sound;
 			$array['call_center_queues'][0]['queue_announce_frequency'] = $queue_announce_frequency;
 			$array['call_center_queues'][0]['queue_cc_exit_keys'] = $queue_cc_exit_keys;
@@ -337,7 +345,7 @@
 			$array['dialplans'][0]["dialplan_uuid"] = $dialplan_uuid;
 			$array['dialplans'][0]["dialplan_name"] = $queue_name;
 			$array['dialplans'][0]["dialplan_number"] = $queue_extension;
-			$array['dialplans'][0]["dialplan_context"] = $_SESSION['context'];
+			$array['dialplans'][0]["dialplan_context"] = $_SESSION['domain_name'];
 			$array['dialplans'][0]["dialplan_continue"] = "false";
 			$array['dialplans'][0]["dialplan_xml"] = $dialplan_xml;
 			$array['dialplans'][0]["dialplan_order"] = "230";
@@ -369,7 +377,7 @@
 
 		//clear the cache
 			$cache = new cache;
-			$cache->delete("dialplan:".$_SESSION["context"]);
+			$cache->delete("dialplan:".$_SESSION["domain_name"]);
 
 		//redirect the user
 			if (isset($action)) {
@@ -471,6 +479,8 @@
 				$queue_discard_abandoned_after = $row["queue_discard_abandoned_after"];
 				$queue_abandoned_resume_allowed = $row["queue_abandoned_resume_allowed"];
 				$queue_cid_prefix = $row["queue_cid_prefix"];
+				$queue_outbound_caller_id_name = $row["queue_outbound_caller_id_name"];
+				$queue_outbound_caller_id_number = $row["queue_outbound_caller_id_number"];
 				$queue_announce_sound = $row["queue_announce_sound"];
 				$queue_announce_frequency = $row["queue_announce_frequency"];
 				$queue_cc_exit_keys = $row["queue_cc_exit_keys"];
@@ -1046,6 +1056,32 @@
 	echo $text['description-caller_id_name_prefix']."\n";
 	echo "</td>\n";
 	echo "</tr>\n";
+
+	if (permission_exists('call_center_outbound_caller_id_name')) {
+		echo "<tr>\n";
+		echo "<td class='vncell' valign='top' align='left' nowrap>\n";
+		echo "	".$text['label-outbound_caller_id_name']."\n";
+		echo "</td>\n";
+		echo "<td class='vtable' align='left'>\n";
+		echo "  <input class='formfld' type='text' name='queue_outbound_caller_id_name' maxlength='255' value='".escape($queue_outbound_caller_id_name)."'>\n";
+		echo "<br />\n";
+		echo $text['description-outbound_caller_id_name']."\n";
+		echo "</td>\n";
+		echo "</tr>\n";
+	}
+
+	if (permission_exists('call_center_outbound_caller_id_number')) {
+		echo "<tr>\n";
+		echo "<td class='vncell' valign='top' align='left' nowrap>\n";
+		echo "	".$text['label-outbound_caller_id_number']."\n";
+		echo "</td>\n";
+		echo "<td class='vtable' align='left'>\n";
+		echo "  <input class='formfld' type='text' name='queue_outbound_caller_id_number' maxlength='255' value='".escape($queue_outbound_caller_id_number)."'>\n";
+		echo "<br />\n";
+		echo $text['description-outbound_caller_id_number']."\n";
+		echo "</td>\n";
+		echo "</tr>\n";
+	}
 
 	echo "<tr>\n";
 	echo "<td class='vncell' valign='top' align='left' nowrap>\n";

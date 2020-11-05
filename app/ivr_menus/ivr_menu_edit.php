@@ -112,6 +112,7 @@
 			$ivr_menu_options = $_POST["ivr_menu_options"];
 			$ivr_menu_invalid_sound = $_POST["ivr_menu_invalid_sound"];
 			$ivr_menu_exit_sound = $_POST["ivr_menu_exit_sound"];
+			$ivr_menu_pin_number = $_POST["ivr_menu_pin_number"];
 			$ivr_menu_confirm_macro = $_POST["ivr_menu_confirm_macro"];
 			$ivr_menu_confirm_key = $_POST["ivr_menu_confirm_key"];
 			$ivr_menu_tts_engine = $_POST["ivr_menu_tts_engine"];
@@ -260,6 +261,7 @@
 					$array['ivr_menus'][0]["ivr_menu_greet_short"] = $ivr_menu_greet_short;
 					$array['ivr_menus'][0]["ivr_menu_invalid_sound"] = $ivr_menu_invalid_sound;
 					$array['ivr_menus'][0]["ivr_menu_exit_sound"] = $ivr_menu_exit_sound;
+					$array['ivr_menus'][0]["ivr_menu_pin_number"] = $ivr_menu_pin_number;
 					$array['ivr_menus'][0]["ivr_menu_confirm_macro"] = $ivr_menu_confirm_macro;
 					$array['ivr_menus'][0]["ivr_menu_confirm_key"] = $ivr_menu_confirm_key;
 					$array['ivr_menus'][0]["ivr_menu_tts_engine"] = $ivr_menu_tts_engine;
@@ -456,6 +458,7 @@
 				$ivr_menu_greet_short = $row["ivr_menu_greet_short"];
 				$ivr_menu_invalid_sound = $row["ivr_menu_invalid_sound"];
 				$ivr_menu_exit_sound = $row["ivr_menu_exit_sound"];
+				$ivr_menu_pin_number = $row["ivr_menu_pin_number"];
 				$ivr_menu_confirm_macro = $row["ivr_menu_confirm_macro"];
 				$ivr_menu_confirm_key = $row["ivr_menu_confirm_key"];
 				$ivr_menu_tts_engine = $row["ivr_menu_tts_engine"];
@@ -536,10 +539,38 @@
 	if (strlen($ivr_menu_voice) == 0) { $ivr_menu_voice = 'callie'; }
 	if (strlen($ivr_menu_tts_engine) == 0) { $ivr_menu_tts_engine = 'flite'; }
 	if (strlen($ivr_menu_tts_voice) == 0) { $ivr_menu_tts_voice = 'rms'; }
-	if (strlen($ivr_menu_confirm_attempts) == 0) { $ivr_menu_confirm_attempts = '1'; }
-	if (strlen($ivr_menu_inter_digit_timeout) == 0) { $ivr_menu_inter_digit_timeout = '2000'; }
-	if (strlen($ivr_menu_max_failures) == 0) { $ivr_menu_max_failures = '1'; }
-	if (strlen($ivr_menu_max_timeouts) == 0) { $ivr_menu_max_timeouts = '1'; }
+	if (strlen($ivr_menu_confirm_attempts) == 0) { 
+		if (strlen($_SESSION['ivr_menu']['confirm_attempts']['numeric']) > 0) {
+			$ivr_menu_confirm_attempts = $_SESSION['ivr_menu']['confirm_attempts']['numeric'];
+		}
+		else {
+			$ivr_menu_confirm_attempts = '1';
+		}
+	}
+	if (strlen($ivr_menu_inter_digit_timeout) == 0) { 
+		if (strlen($_SESSION['ivr_menu']['inter_digit_timeout']['numeric']) > 0) {
+			$ivr_menu_inter_digit_timeout = $_SESSION['ivr_menu']['inter_digit_timeout']['numeric'];
+		}
+		else {
+			$ivr_menu_inter_digit_timeout = '2000'; 
+		}
+	}
+	if (strlen($ivr_menu_max_failures) == 0) { 
+		if (strlen($_SESSION['ivr_menu']['max_failures']['numeric']) > 0) {
+			$ivr_menu_max_failures = $_SESSION['ivr_menu']['max_failures']['numeric'];
+		}
+		else {
+			$ivr_menu_max_failures = '1'; 
+		}
+	}
+	if (strlen($ivr_menu_max_timeouts) == 0) { 
+		if (strlen($_SESSION['ivr_menu']['max_timeouts']['numeric']) > 0) {
+			$ivr_menu_max_timeouts = $_SESSION['ivr_menu']['max_timeouts']['numeric'];
+		}
+		else {
+			$ivr_menu_max_timeouts = '1'; 
+		}
+	}
 	if (strlen($ivr_menu_digit_len) == 0) { $ivr_menu_digit_len = '5'; }
 	if (strlen($ivr_menu_direct_dial) == 0) { $ivr_menu_direct_dial = 'false'; }
 	if (!isset($ivr_menu_context)) { $ivr_menu_context = $_SESSION['domain_name']; }
@@ -1375,6 +1406,17 @@
 		echo "</select>\n";
 		echo "<br />\n";
 		echo $text['description-exit_sound']."\n";
+		echo "</td>\n";
+		echo "</tr>\n";
+
+		echo "<tr>\n";
+		echo "<td class='vncell' valign='top' align='left' nowrap>\n";
+		echo "	".$text['label-pin_number']."\n";
+		echo "</td>\n";
+		echo "<td class='vtable' align='left'>\n";
+		echo "	<input class='formfld' type='text' name='ivr_menu_pin_number' maxlength='255' value=\"".escape($ivr_menu_pin_number)."\">\n";
+		echo "<br />\n";
+		echo $text['description-pin_number']."\n";
 		echo "</td>\n";
 		echo "</tr>\n";
 
