@@ -85,7 +85,7 @@
 			system('mkdir -p '.$config_path);
 		}
 		else {
-			echo "config directory not found\n";
+			echo "Config directory not found\n";
 			exit;
 		}
 
@@ -232,7 +232,7 @@
 		$response = $schema->upgrade($format ?? '');
 		if ($display_type === 'text') {
 			foreach(explode("\n", $response) as $row) {
-				echo "        ".trim($row)."\n";
+				echo trim($row)."\n";
 			}
 		}
 	}
@@ -324,7 +324,7 @@
 			echo "Menu List\n";
 			foreach ($menus as $row) {
 				if (!empty($row) && sizeof($row) != 0) {
-					echo "  ".$row["menu_name"]."\n";
+					echo $row["menu_name"]."\n";
 				}
 			}
 			echo "\n";
@@ -420,7 +420,7 @@
 			$response = $schema->upgrade("text");
 			if ($display_type === 'text') {
 				foreach(explode("\n", $response) as $row) {
-					echo "        ".trim($row)."\n";
+					echo trim($row)."\n";
 				}
 			}
 
@@ -535,7 +535,7 @@
 			$project_root = dirname(__DIR__, 1);
 
 			//show the response
-			echo " $application\n";
+			echo "$application\n";
 
 			//pull the changes using git
 			$git_result = git_pull($repo);
@@ -635,17 +635,45 @@ function update_file_permissions($text, settings $settings) {
  */
 function upgrade_services($text, settings $settings) {
 	//echo ($text['description-upgrade_services'] ?? "")."\n";
-	$core_files = glob(dirname(__DIR__, 2) . "/core/*/resources/service/*.service");
-	$app_files = glob(dirname(__DIR__, 2) . "/app/*/resources/service/*.service");
-	$service_files = array_merge($core_files, $app_files);
+
+	// Determine the search file name
 	if (stristr(PHP_OS, 'Linux')) {
+		$search_file_name = 'debian';
+	}
+	if (stristr(PHP_OS, 'FreeBSD')) {
+		$search_file_name = 'freebsd';
+	}
+
+	// Get the list of services
+	$core_files = glob(dirname(__DIR__, 2) . "/core/*/resources/service/".$search_file_name.".service");
+	$app_files = glob(dirname(__DIR__, 2) . "/app/*/resources/service/".$search_file_name.".service");
+	$service_files = array_merge($core_files, $app_files);
+
+	// Stop each of the services
+	if (!empty($service_files)) {
 		foreach($service_files as $file) {
+			// Set a variable for the service name
 			$service_name = find_service_name($file);
-			echo "	Name: ".$service_name."\n";
-			system("cp " . escapeshellarg($file) . " /etc/systemd/system/" . escapeshellarg($service_name) . ".service");
-			system("systemctl daemon-reload");
-			system("systemctl enable " . escapeshellarg($service_name));
-			system("systemctl start " . escapeshellarg($service_name));
+			// Sanitize the service name
+			$service_name = preg_replace('/[^a-zA-Z0-9_]/', '', $service_name);
+			// Send the service name to the console
+			if (stristr(PHP_OS, 'Linux')) {
+				echo "Name: ".$service_name."\n";
+			}
+			// Install the service
+			if (stristr(PHP_OS, 'Linux')) {
+				system("cp " . escapeshellarg($file) . " /etc/systemd/system/" . escapeshellarg($service_name) . ".service");
+				system("systemctl daemon-reload");
+				system("systemctl enable " . escapeshellarg($service_name));
+				system("systemctl start " . escapeshellarg($service_name));
+			}
+			if (stristr(PHP_OS, 'FreeBSD')) {
+				system("cp " . $file . " /usr/local/etc/rc.d/".$service_name);
+				system("sysrc " . $service_name . "_enable=\"YES\"");
+				system("chmod 755 /usr/local/etc/rc.d/" . $service_name);
+				// Start the service
+				system("service " . $service_name . " start");
+			}
 		}
 	}
 }
@@ -661,13 +689,39 @@ function upgrade_services($text, settings $settings) {
  */
 function stop_services($text, settings $settings) {
 	//echo ($text['description-stop_services'] ?? "")."\n";
-	$core_files = glob(dirname(__DIR__, 2) . "/core/*/resources/service/*.service");
-	$app_files = glob(dirname(__DIR__, 2) . "/app/*/resources/service/*.service");
+
+	// Determine the search file name
+	if (stristr(PHP_OS, 'Linux')) {
+		$search_file_name = 'debian';
+	}
+	if (stristr(PHP_OS, 'FreeBSD')) {
+		$search_file_name = 'freebsd';
+	}
+
+	// Get the list of services
+	$core_files = glob(dirname(__DIR__, 2) . "/core/*/resources/service/".$search_file_name.".service");
+	$app_files = glob(dirname(__DIR__, 2) . "/app/*/resources/service/".$search_file_name.".service");
 	$service_files = array_merge($core_files, $app_files);
-	foreach($service_files as $file) {
-		$service_name = find_service_name($file);
-		echo "	Name: ".$service_name."\n";
-		system("systemctl stop ".$service_name);
+
+	// Stop each of the services
+	if (!empty($service_files)) {
+		foreach($service_files as $file) {
+			// Set a variable for the service name
+		 	$service_name = find_service_name($file);
+		 	// Sanitize the service name
+		 	$service_name = preg_replace('/[^a-zA-Z0-9_]/', '', $service_name);
+		 	// Send the service name to the console
+			if (stristr(PHP_OS, 'Linux')) {
+		 		echo "Name: " . $service_name . "\n";
+			}
+		 	// Stop the service
+			if (stristr(PHP_OS, 'Linux')) {
+		 		system("service " . $service_name . " stop");
+			}
+			if (stristr(PHP_OS, 'FreeBSD')) {
+				system("service " . $service_name . " stop");
+			}
+		}
 	}
 }
 
@@ -681,13 +735,39 @@ function stop_services($text, settings $settings) {
  */
 function restart_services($text, settings $settings) {
 	//echo ($text['description-restart_services'] ?? "")."\n";
-	$core_files = glob(dirname(__DIR__, 2) . "/core/*/resources/service/*.service");
-	$app_files = glob(dirname(__DIR__, 2) . "/app/*/resources/service/*.service");
+
+	// Determine the search file name
+	if (stristr(PHP_OS, 'Linux')) {
+		$search_file_name = 'debian';
+	}
+	if (stristr(PHP_OS, 'FreeBSD')) {
+		$search_file_name = 'freebsd';
+	}
+
+	// Get the list of services
+	$core_files = glob(dirname(__DIR__, 2) . "/core/*/resources/service/".$search_file_name.".service");
+	$app_files = glob(dirname(__DIR__, 2) . "/app/*/resources/service/".$search_file_name.".service");
 	$service_files = array_merge($core_files, $app_files);
-	foreach($service_files as $file) {
-		$service_name = find_service_name($file);
-		echo "	Name: ".$service_name."\n";
-		system("systemctl restart ".$service_name);
+
+	// Restart each of the services
+	if (!empty($service_files)) {
+		foreach($service_files as $file) {
+			// Set a variable for the service name
+			$service_name = find_service_name($file);
+		 	// Sanitize the service name
+		 	$service_name = preg_replace('/[^a-zA-Z0-9_]/', '', $service_name);
+		 	// Send the service name to the console
+			if (stristr(PHP_OS, 'Linux')) {
+				echo "Name: ".$service_name."\n";
+			}
+			// Restart the service
+			if (stristr(PHP_OS, 'Linux')) {
+				system("systemctl restart ".$service_name);
+			}
+			if (stristr(PHP_OS, 'FreeBSD')) {
+				system("service " . $service_name . " restart");
+			}
+		}
 	}
 }
 
@@ -699,13 +779,23 @@ function restart_services($text, settings $settings) {
  * @return string|null The service name if found, otherwise an empty string.
  */
 function find_service_name(string $file) {
-	$parsed = parse_ini_file($file);
-	$exec_cmd = $parsed['ExecStart'];
-	$parts = explode(' ', $exec_cmd);
-	$php_file = $parts[1] ?? '';
-	if (!empty($php_file)) {
-		$path_info = pathinfo($php_file);
-		return $path_info['filename'];
+	if (stristr(PHP_OS, 'Linux')) {
+		$parsed = parse_ini_file($file);
+		$exec_cmd = $parsed['ExecStart'];
+		$parts = explode(' ', $exec_cmd);
+		$php_file = $parts[1] ?? '';
+		if (!empty($php_file)) {
+			$path_info = pathinfo($php_file);
+			return $path_info['filename'];
+		}
+	}
+	if (stristr(PHP_OS, 'FreeBSD')) {
+		$service_content = file_get_contents($file);
+		if (preg_match('/^\s*name\s*=\s*["\']([^"\']+)["\']\s*$/m', $service_content, $name_matches)) {
+		    if (!empty($name_matches[1])) {
+		    	return $name_matches[1];
+		    }
+		}
 	}
 	return '';
 }
